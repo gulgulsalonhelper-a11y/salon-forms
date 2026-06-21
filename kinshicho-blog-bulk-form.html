@@ -153,13 +153,13 @@ function submitBulk() {
   setStatus('⏳ ' + items.length + '件をシートに追加しています...', 'ing');
   document.getElementById('submitBtn').disabled = true;
 
-  const itemsJson = JSON.stringify(items);
-  const url = GAS_URL + '?action=addKinshichoBulk'
-    + '&category=' + encodeURIComponent(cat)
-    + '&items=' + encodeURIComponent(itemsJson);
-
-  // fetch方式（script.googleusercontent.comへのリダイレクトを自動で追う）
-  fetch(url, { method: 'GET', redirect: 'follow' })
+  // POST送信（URL長制限を受けない。Content-Typeはtext/plainでCORSプリフライト回避）
+  fetch(GAS_URL, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'addKinshichoBulk', category: cat, items: items })
+  })
     .then(res => res.text())
     .then(text => {
       let data;
