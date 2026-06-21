@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>錦糸町ブログ 一括投入フォーム</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: #f5f5f7; padding: 16px; color: #1d1d1f; }
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .sub { font-size: 12px; color: #6e6e73; margin-bottom: 16px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+  .hint { font-size: 12px; color: #6e6e73; line-height: 1.6; margin-bottom: 10px; }
+  .hint code { background: #f0f0f5; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  textarea {
+    width: 100%; border: 1px solid #d2d2d7; border-radius: 8px; padding: 12px;
+    font-size: 14px; font-family: inherit; background: #fafafa; min-height: 280px;
+    resize: vertical; line-height: 1.6; outline: none;
+  }
+  textarea:focus { border-color: #0071e3; background: #fff; }
+  select { width: 100%; border: 1px solid #d2d2d7; border-radius: 8px; padding: 10px 12px; font-size: 15px; background: #fafafa; }
+  .btn-primary { width: 100%; padding: 14px; background: #0071e3; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+  .btn-primary:active { background: #005bbf; }
+  .btn-primary:disabled { background: #b3b3b3; }
+  .btn-sub { width: 100%; padding: 11px; background: #f5f5f7; color: #1d1d1f; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 14px; cursor: pointer; margin-bottom: 8px; }
+  #status { border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.7; display: none; margin-bottom: 16px; white-space: pre-wrap; }
+  .status-ok { background: #d1fae5; color: #065f46; display: block !important; }
+  .status-err { background: #fee2e2; color: #991b1b; display: block !important; }
+  .status-ing { background: #e0f2fe; color: #0369a1; display: block !important; }
+  .preview-item { background: #f9f9fb; border: 1px solid #e5e5ea; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; }
+  .preview-title { font-weight: 600; margin-bottom: 4px; }
+  .preview-body { color: #6e6e73; font-size: 12px; line-height: 1.5; max-height: 48px; overflow: hidden; }
+  .count-badge { display: inline-block; background: #0071e3; color: #fff; border-radius: 12px; padding: 2px 10px; font-size: 13px; font-weight: 700; margin-left: 8px; }
+  .fixed-tag { background: #f0f0f5; border-radius: 6px; padding: 10px 12px; font-size: 12px; color: #3a3a3c; line-height: 1.6; }
+  .fixed-tag span { color: #6e6e73; font-size: 11px; display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<h1>📝 錦糸町ブログ 一括投入</h1>
+<p class="sub">ali'i by GULGUL 錦糸町店 / 投稿者：アリィ　錦糸町店（固定）</p>
+
+<div id="status"></div>
+
+<div class="card">
+  <label>カテゴリ（全記事共通）</label>
+  <select id="category">
+    <option value="おすすめスタイル">おすすめスタイル</option>
+    <option value="ビューティー">ビューティー</option>
+    <option value="おすすめメニュー">おすすめメニュー</option>
+  </select>
+</div>
+
+<div class="card">
+  <label>記事をまとめて貼り付け</label>
+  <p class="hint">
+    記事の区切りは <code>===</code> の行。各記事の1行目に <code>タイトル：</code> を書く。<br>
+    締め（住所・ハッシュタグ）は自動で付くので本文に入れなくてOK。
+  </p>
+  <textarea id="bulk" placeholder="===&#10;タイトル：梅雨でも広がらない｜錦糸町で叶える髪質改善×縮毛矯正&#10;こんにちは！ali'i by GULGUL 錦糸町店です。&#10;（本文…）&#10;===&#10;タイトル：白髪が気になり始めたら｜錦糸町の艶グレイカラー×ショート&#10;こんにちは！ali'i by GULGUL 錦糸町店です。&#10;（本文…）&#10;==="></textarea>
+</div>
+
+<button class="btn-sub" onclick="preview()">👁 プレビュー（記事数を確認）</button>
+
+<div class="card" id="previewCard" style="display:none">
+  <label>プレビュー <span class="count-badge" id="countBadge">0件</span></label>
+  <div id="previewList"></div>
+</div>
+
+<div class="card">
+  <label>固定の締め（自動付加）</label>
+  <div class="fixed-tag">
+    <span>※ 各記事の本文末尾に自動追加</span>
+    ―――――――――<br>
+    ali'i by GULGUL 錦糸町店／東京都墨田区太平2-6-3 第二藤ビル1F<br>
+    錦糸町駅北口より徒歩5分／年中無休<br>
+    #前髪カット #顔周り #白髪染め #縮毛矯正 #髪質改善 #錦糸町 #錦糸町駅 #ショート #ボブ #メンズ
+  </div>
+</div>
+
+<button class="btn-primary" id="submitBtn" onclick="submitBulk()">✅ まとめてキューに追加</button>
+<button class="btn-sub" onclick="clearForm()">🗑 クリア</button>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz5Nb6rtxzdMcRxzIjGwkT4parDystGbLcIswJ4yuS-GlBhUKVGAuqoA46OCqnRS6kS/exec';
+
+const FOOTER = `\n\n―――――――――\nali'i by GULGUL 錦糸町店\n東京都墨田区太平2-6-3 第二藤ビル1F\n錦糸町駅北口より徒歩5分／年中無休\n―――――――――\n#前髪カット #顔周り #白髪染め #縮毛矯正 #髪質改善 #錦糸町 #錦糸町駅 #ショート #ボブ #メンズ`;
+
+// 貼り付けテキストを記事配列にパース
+function parseArticles(raw) {
+  const blocks = raw.split(/^\s*===\s*$/m).map(b => b.trim()).filter(b => b.length > 0);
+  const articles = [];
+  for (const block of blocks) {
+    const lines = block.split('\n');
+    let title = '';
+    let bodyLines = [];
+    let titleFound = false;
+    for (const line of lines) {
+      const m = line.match(/^\s*タイトル[：:]\s*(.+)$/);
+      if (m && !titleFound) {
+        title = m[1].trim();
+        titleFound = true;
+      } else {
+        bodyLines.push(line);
+      }
+    }
+    // 本文先頭・末尾の空行を除去
+    let body = bodyLines.join('\n').trim();
+    if (title && body) articles.push({ title, body });
+  }
+  return articles;
+}
+
+function preview() {
+  const raw = document.getElementById('bulk').value;
+  const articles = parseArticles(raw);
+  const card = document.getElementById('previewCard');
+  const list = document.getElementById('previewList');
+  const badge = document.getElementById('countBadge');
+
+  if (articles.length === 0) {
+    setStatus('記事が検出できませんでした。区切りの === と「タイトル：」を確認してください。', 'err');
+    card.style.display = 'none';
+    return;
+  }
+  document.getElementById('status').style.display = 'none';
+  badge.textContent = articles.length + '件';
+  list.innerHTML = '';
+  articles.forEach((a, i) => {
+    const div = document.createElement('div');
+    div.className = 'preview-item';
+    div.innerHTML = '<div class="preview-title">' + (i+1) + '. ' + escapeHtml(a.title) + '</div>'
+      + '<div class="preview-body">' + escapeHtml(a.body.slice(0, 60)) + '…</div>';
+    list.appendChild(div);
+  });
+  card.style.display = 'block';
+}
+
+function submitBulk() {
+  const raw = document.getElementById('bulk').value;
+  const cat = document.getElementById('category').value;
+  const articles = parseArticles(raw);
+
+  if (articles.length === 0) {
+    setStatus('記事が検出できませんでした。=== と「タイトル：」を確認してください。', 'err');
+    return;
+  }
+
+  // 各本文に締めを付加
+  const items = articles.map(a => ({ title: a.title, body: a.body + FOOTER }));
+
+  setStatus('⏳ ' + items.length + '件をシートに追加しています...', 'ing');
+  document.getElementById('submitBtn').disabled = true;
+
+  const cb = '_kbulk_' + Date.now();
+  let sc;
+  const timer = setTimeout(() => {
+    cleanup();
+    setStatus('❌ タイムアウト。記事数が多すぎる場合は分けて送信してください。', 'err');
+    document.getElementById('submitBtn').disabled = false;
+  }, 20000);
+
+  function cleanup() { clearTimeout(timer); delete window[cb]; if (sc) sc.remove(); }
+
+  window[cb] = (data) => {
+    cleanup();
+    if (data.success) {
+      setStatus('✅ ' + data.added + '件を追加しました！\nqueue_kinshicho の ' + data.startRow + '〜' + data.endRow + '行目に「未投稿」で入りました。\n\nあとはiPadのサロンボードで自動入力ボタンを押すだけです。', 'ok');
+      document.getElementById('bulk').value = '';
+      document.getElementById('previewCard').style.display = 'none';
+    } else {
+      setStatus('❌ エラー: ' + (data.error || '不明'), 'err');
+    }
+    document.getElementById('submitBtn').disabled = false;
+  };
+
+  const itemsJson = JSON.stringify(items);
+  sc = document.createElement('script');
+  sc.src = GAS_URL + '?action=addKinshichoBulk&callback=' + cb
+    + '&category=' + encodeURIComponent(cat)
+    + '&items=' + encodeURIComponent(itemsJson);
+  sc.onerror = () => { cleanup(); setStatus('❌ GAS接続失敗', 'err'); document.getElementById('submitBtn').disabled = false; };
+  document.head.appendChild(sc);
+}
+
+function clearForm() {
+  document.getElementById('bulk').value = '';
+  document.getElementById('previewCard').style.display = 'none';
+  document.getElementById('status').style.display = 'none';
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = type === 'ok' ? 'status-ok' : type === 'err' ? 'status-err' : 'status-ing';
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

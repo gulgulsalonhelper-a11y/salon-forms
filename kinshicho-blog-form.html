@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>錦糸町ブログ投稿フォーム</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: #f5f5f7; padding: 16px; }
+  h1 { font-size: 18px; font-weight: 700; color: #1d1d1f; margin-bottom: 4px; }
+  .sub { font-size: 12px; color: #6e6e73; margin-bottom: 20px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  label { font-size: 13px; font-weight: 600; color: #1d1d1f; display: block; margin-bottom: 6px; }
+  input[type=text], textarea, select {
+    width: 100%; border: 1px solid #d2d2d7; border-radius: 8px;
+    padding: 10px 12px; font-size: 15px; font-family: inherit;
+    background: #fafafa; color: #1d1d1f; outline: none;
+  }
+  input[type=text]:focus, textarea:focus, select:focus { border-color: #0071e3; background: #fff; }
+  textarea { min-height: 180px; resize: vertical; line-height: 1.6; }
+  .info-row { display: flex; gap: 8px; font-size: 12px; color: #6e6e73; margin-top: 6px; }
+  .char-count { margin-left: auto; }
+  .btn-primary {
+    width: 100%; padding: 14px; background: #0071e3; color: #fff;
+    border: none; border-radius: 10px; font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  .btn-primary:active { background: #005bbf; }
+  .btn-primary:disabled { background: #b3b3b3; }
+  .btn-clear {
+    width: 100%; padding: 10px; background: #f5f5f7; color: #6e6e73;
+    border: 1px solid #d2d2d7; border-radius: 10px; font-size: 14px; cursor: pointer;
+  }
+  #status {
+    border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.6;
+    display: none; margin-bottom: 16px; white-space: pre-wrap;
+  }
+  .status-ok  { background: #d1fae5; color: #065f46; display: block !important; }
+  .status-err { background: #fee2e2; color: #991b1b; display: block !important; }
+  .status-ing { background: #e0f2fe; color: #0369a1; display: block !important; }
+  .fixed-tag { background: #f0f0f5; border-radius: 6px; padding: 10px 12px; font-size: 13px; color: #3a3a3c; line-height: 1.7; }
+  .fixed-tag span { color: #6e6e73; font-size: 11px; display: block; margin-bottom: 4px; }
+  .history { max-height: 160px; overflow-y: auto; }
+  .hist-item { padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #3a3a3c; }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-time { font-size: 11px; color: #6e6e73; }
+</style>
+</head>
+<body>
+
+<h1>📝 錦糸町ブログ 投稿フォーム</h1>
+<p class="sub">ali'i by GULGUL 錦糸町店 / 投稿者：アリィ　錦糸町店（固定）</p>
+
+<div id="status"></div>
+
+<div class="card">
+  <label>タイトル <span style="color:#e3002b">*</span></label>
+  <input type="text" id="title" placeholder="例：梅雨でも広がらない｜錦糸町で叶える髪質改善×縮毛矯正" maxlength="60">
+  <div class="info-row"><span id="title-count" class="char-count">0/60文字</span></div>
+</div>
+
+<div class="card">
+  <label>カテゴリ</label>
+  <select id="category">
+    <option value="おすすめスタイル">おすすめスタイル</option>
+    <option value="ビューティー">ビューティー</option>
+    <option value="おすすめメニュー">おすすめメニュー</option>
+  </select>
+</div>
+
+<div class="card">
+  <label>本文 <span style="color:#e3002b">*</span></label>
+  <textarea id="body" placeholder="こんにちは！ali'i by GULGUL 錦糸町店です。&#10;&#10;ここに本文を貼り付けてください..."></textarea>
+  <div class="info-row"><span id="body-count" class="char-count">0文字</span></div>
+</div>
+
+<div class="card">
+  <label>固定の締め（自動付加）</label>
+  <div class="fixed-tag">
+    <span>※ 本文の後に自動で追加されます</span>
+    ―――――――――<br>
+    ali'i by GULGUL 錦糸町店<br>
+    東京都墨田区太平2-6-3 第二藤ビル1F<br>
+    錦糸町駅北口より徒歩5分／年中無休<br>
+    ―――――――――<br>
+    #前髪カット #顔周り #白髪染め #縮毛矯正 #髪質改善 #錦糸町 #錦糸町駅 #ショート #ボブ #メンズ
+  </div>
+</div>
+
+<button class="btn-primary" id="submitBtn" onclick="submit()">✅ キューに追加する</button>
+<button class="btn-clear" onclick="clearForm()">🗑 フォームをクリア</button>
+
+<div class="card" style="margin-top:16px" id="historyCard" style="display:none">
+  <label>追加履歴</label>
+  <div class="history" id="history"></div>
+</div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz5Nb6rtxzdMcRxzIjGwkT4parDystGbLcIswJ4yuS-GlBhUKVGAuqoA46OCqnRS6kS/exec';
+
+const FOOTER = `\n\n―――――――――\nali'i by GULGUL 錦糸町店\n東京都墨田区太平2-6-3 第二藤ビル1F\n錦糸町駅北口より徒歩5分／年中無休\n―――――――――\n#前髪カット #顔周り #白髪染め #縮毛矯正 #髪質改善 #錦糸町 #錦糸町駅 #ショート #ボブ #メンズ`;
+
+// 文字数カウント
+document.getElementById('title').addEventListener('input', function() {
+  document.getElementById('title-count').textContent = this.value.length + '/60文字';
+});
+document.getElementById('body').addEventListener('input', function() {
+  document.getElementById('body-count').textContent = this.value.length + '文字';
+});
+
+function submit() {
+  const title = document.getElementById('title').value.trim();
+  const body  = document.getElementById('body').value.trim();
+  const cat   = document.getElementById('category').value;
+
+  if (!title) { setStatus('タイトルを入力してください', 'err'); return; }
+  if (!body)  { setStatus('本文を入力してください', 'err'); return; }
+
+  setStatus('⏳ シートに追加しています...', 'ing');
+  document.getElementById('submitBtn').disabled = true;
+
+  const fullBody = body + FOOTER;
+
+  const cb = '_kform_' + Date.now();
+  let sc;
+  const timer = setTimeout(() => {
+    cleanup(); setStatus('❌ タイムアウト。GAS URLを確認してください。', 'err');
+    document.getElementById('submitBtn').disabled = false;
+  }, 15000);
+
+  function cleanup() { clearTimeout(timer); delete window[cb]; if (sc) sc.remove(); }
+
+  window[cb] = (data) => {
+    cleanup();
+    if (data.success) {
+      setStatus('✅ 追加しました！\nタイトル：' + title + '\n→ queueシートの ' + data.row + '行目に「未投稿」で入りました', 'ok');
+      addHistory(title, cat);
+      document.getElementById('title').value = '';
+      document.getElementById('body').value = '';
+      document.getElementById('title-count').textContent = '0/60文字';
+      document.getElementById('body-count').textContent = '0文字';
+    } else {
+      setStatus('❌ エラー: ' + (data.error || '不明'), 'err');
+    }
+    document.getElementById('submitBtn').disabled = false;
+  };
+
+  sc = document.createElement('script');
+  sc.src = GAS_URL + '?action=addKinshichoBlog&callback=' + cb
+    + '&title=' + encodeURIComponent(title)
+    + '&body='  + encodeURIComponent(fullBody)
+    + '&category=' + encodeURIComponent(cat);
+  sc.onerror = () => { cleanup(); setStatus('❌ GAS接続失敗', 'err'); document.getElementById('submitBtn').disabled = false; };
+  document.head.appendChild(sc);
+}
+
+function clearForm() {
+  document.getElementById('title').value = '';
+  document.getElementById('body').value = '';
+  document.getElementById('title-count').textContent = '0/60文字';
+  document.getElementById('body-count').textContent = '0文字';
+  document.getElementById('status').className = '';
+  document.getElementById('status').style.display = 'none';
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = type === 'ok' ? 'status-ok' : type === 'err' ? 'status-err' : 'status-ing';
+}
+
+function addHistory(title, cat) {
+  const h = document.getElementById('history');
+  document.getElementById('historyCard').style.display = 'block';
+  const now = new Date();
+  const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+  const div = document.createElement('div');
+  div.className = 'hist-item';
+  div.innerHTML = '<div class="hist-time">' + time + ' [' + cat + ']</div>' + title;
+  h.insertBefore(div, h.firstChild);
+}
+</script>
+</body>
+</html>
