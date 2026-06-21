@@ -153,35 +153,31 @@ function submitBulk() {
   setStatus('⏳ ' + items.length + '件をシートに追加しています...', 'ing');
   document.getElementById('submitBtn').disabled = true;
 
-  const cb = '_kbulk_' + Date.now();
-  let sc;
-  const timer = setTimeout(() => {
-    cleanup();
-    setStatus('❌ タイムアウト。記事数が多すぎる場合は分けて送信してください。', 'err');
-    document.getElementById('submitBtn').disabled = false;
-  }, 20000);
-
-  function cleanup() { clearTimeout(timer); delete window[cb]; if (sc) sc.remove(); }
-
-  window[cb] = (data) => {
-    cleanup();
-    if (data.success) {
-      setStatus('✅ ' + data.added + '件を追加しました！\nqueue_kinshicho の ' + data.startRow + '〜' + data.endRow + '行目に「未投稿」で入りました。\n\nあとはiPadのサロンボードで自動入力ボタンを押すだけです。', 'ok');
-      document.getElementById('bulk').value = '';
-      document.getElementById('previewCard').style.display = 'none';
-    } else {
-      setStatus('❌ エラー: ' + (data.error || '不明'), 'err');
-    }
-    document.getElementById('submitBtn').disabled = false;
-  };
-
   const itemsJson = JSON.stringify(items);
-  sc = document.createElement('script');
-  sc.src = GAS_URL + '?action=addKinshichoBulk&callback=' + cb
+  const url = GAS_URL + '?action=addKinshichoBulk'
     + '&category=' + encodeURIComponent(cat)
     + '&items=' + encodeURIComponent(itemsJson);
-  sc.onerror = () => { cleanup(); setStatus('❌ GAS接続失敗', 'err'); document.getElementById('submitBtn').disabled = false; };
-  document.head.appendChild(sc);
+
+  // fetch方式（script.googleusercontent.comへのリダイレクトを自動で追う）
+  fetch(url, { method: 'GET', redirect: 'follow' })
+    .then(res => res.text())
+    .then(text => {
+      let data;
+      try { data = JSON.parse(text); }
+      catch(e) { throw new Error('応答の解析に失敗: ' + text.slice(0, 80)); }
+      if (data.success) {
+        setStatus('✅ ' + data.added + '件を追加しました！\nqueue_kinshicho の ' + data.startRow + '〜' + data.endRow + '行目に「未投稿」で入りました。\n\nあとはiPadのサロンボードで自動入力ボタンを押すだけです。', 'ok');
+        document.getElementById('bulk').value = '';
+        document.getElementById('previewCard').style.display = 'none';
+      } else {
+        setStatus('❌ エラー: ' + (data.error || '不明'), 'err');
+      }
+      document.getElementById('submitBtn').disabled = false;
+    })
+    .catch(err => {
+      setStatus('❌ 送信失敗: ' + err.message, 'err');
+      document.getElementById('submitBtn').disabled = false;
+    });
 }
 
 function clearForm() {
