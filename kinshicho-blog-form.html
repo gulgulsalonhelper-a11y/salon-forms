@@ -121,37 +121,33 @@ function submit() {
 
   const fullBody = body + FOOTER;
 
-  const cb = '_kform_' + Date.now();
-  let sc;
-  const timer = setTimeout(() => {
-    cleanup(); setStatus('❌ タイムアウト。GAS URLを確認してください。', 'err');
-    document.getElementById('submitBtn').disabled = false;
-  }, 15000);
-
-  function cleanup() { clearTimeout(timer); delete window[cb]; if (sc) sc.remove(); }
-
-  window[cb] = (data) => {
-    cleanup();
-    if (data.success) {
-      setStatus('✅ 追加しました！\nタイトル：' + title + '\n→ queueシートの ' + data.row + '行目に「未投稿」で入りました', 'ok');
-      addHistory(title, cat);
-      document.getElementById('title').value = '';
-      document.getElementById('body').value = '';
-      document.getElementById('title-count').textContent = '0/60文字';
-      document.getElementById('body-count').textContent = '0文字';
-    } else {
-      setStatus('❌ エラー: ' + (data.error || '不明'), 'err');
-    }
-    document.getElementById('submitBtn').disabled = false;
-  };
-
-  sc = document.createElement('script');
-  sc.src = GAS_URL + '?action=addKinshichoBlog&callback=' + cb
+  const url = GAS_URL + '?action=addKinshichoBlog'
     + '&title=' + encodeURIComponent(title)
     + '&body='  + encodeURIComponent(fullBody)
     + '&category=' + encodeURIComponent(cat);
-  sc.onerror = () => { cleanup(); setStatus('❌ GAS接続失敗', 'err'); document.getElementById('submitBtn').disabled = false; };
-  document.head.appendChild(sc);
+
+  fetch(url, { method: 'GET', redirect: 'follow' })
+    .then(res => res.text())
+    .then(text => {
+      let data;
+      try { data = JSON.parse(text); }
+      catch(e) { throw new Error('応答の解析に失敗: ' + text.slice(0, 80)); }
+      if (data.success) {
+        setStatus('✅ 追加しました！\nタイトル：' + title + '\n→ queue_kinshicho の ' + data.row + '行目に「未投稿」で入りました', 'ok');
+        addHistory(title, cat);
+        document.getElementById('title').value = '';
+        document.getElementById('body').value = '';
+        document.getElementById('title-count').textContent = '0/60文字';
+        document.getElementById('body-count').textContent = '0文字';
+      } else {
+        setStatus('❌ エラー: ' + (data.error || '不明'), 'err');
+      }
+      document.getElementById('submitBtn').disabled = false;
+    })
+    .catch(err => {
+      setStatus('❌ 送信失敗: ' + err.message, 'err');
+      document.getElementById('submitBtn').disabled = false;
+    });
 }
 
 function clearForm() {
